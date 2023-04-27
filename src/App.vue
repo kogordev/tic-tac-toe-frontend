@@ -2,7 +2,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { io } from 'socket.io-client';
 
-const socket = io('ws://localhost:3000', { transports: ['websocket'] });
+const ENDPOINT = 'ws://localhost:3000';
+const socket = io(ENDPOINT, { transports: ['websocket'] });
 
 socket.on('draw', (data) => {
 	console.log(data);
