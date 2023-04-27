@@ -1,5 +1,23 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { io } from 'socket.io-client';
+
+const socket = io('ws://localhost:3000', { transports: ['websocket'] });
+
+socket.on('draw', (data) => {
+	console.log(data);
+	MakeMove(...data, true);
+});
+
+socket.on('gameReset', (data) => {
+	console.log('gameReset recieved');
+	GameReset(true);
+});
+
+onMounted(() => {
+	console.log('refreshed');
+	GameReset(false);
+});
 
 const board = ref([
 	['', '', ''],
@@ -34,15 +52,18 @@ const CalculateWinner = (squares) => {
 
 const winner = computed(() => CalculateWinner(board.value.flat()));
 
-const MakeMove = (x, y) => {
+const MakeMove = (x, y, serverAction) => {
 	if (board.value[x][y] || winner.value) {
 		return;
 	}
 	board.value[x][y] = player.value;
+	if (!serverAction) {
+		socket.emit('move', [x, y]);
+	}
 	player.value = player.value === 'X' ? 'O' : 'X';
 };
 
-const GameReset = () => {
+const GameReset = (serverAction) => {
 	board.value = [
 		['', '', ''],
 		['', '', ''],
@@ -50,6 +71,10 @@ const GameReset = () => {
 	];
 
 	player.value = 'X';
+	if (!serverAction) {
+		socket.emit('reset', '');
+		console.log('reset emited');
+	}
 };
 </script>
 
@@ -81,7 +106,7 @@ const GameReset = () => {
 					} duration-100`"
 					v-for="(cell, y) in row"
 					:key="y"
-					@click="MakeMove(x, y)"
+					@click="MakeMove(x, y, false)"
 				>
 					{{ cell }}
 				</div>
@@ -89,7 +114,7 @@ const GameReset = () => {
 		</div>
 		<button
 			class="text-xl font-bold bg-pink-500 text-white py-1 px-2 rounded hover:bg-pink-600 duration-300"
-			@click="GameReset"
+			@click="GameReset(false)"
 		>
 			Reset
 		</button>
@@ -102,10 +127,10 @@ const GameReset = () => {
   durations and timing functions.
 */
 .bounce-enter-active {
-	animation: bounce-in 0.5s;
+	animation: bounce-in 0.1s;
 }
 .bounce-leave-active {
-	animation: bounce-in 0.5s reverse;
+	animation: bounce-in 0.1s reverse;
 }
 @keyframes bounce-in {
 	0% {
