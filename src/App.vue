@@ -2,9 +2,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { io } from 'socket.io-client';
 
-const ENDPOINT = 'ws://localhost:3000';
+const ENDPOINT = 'wss://tic-tac-toe-backend.glitch.me/';
 const socket = io(ENDPOINT, { transports: ['websocket'] });
 
+//when server send the clicked cell from the other player
 socket.on('draw', (data) => {
 	console.log(data);
 	MakeMove(...data, true);
